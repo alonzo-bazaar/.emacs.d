@@ -1,0 +1,11 @@
+# -*- mode: snippet -*-
+# name: model
+# key: m
+# --
+{
+    \"name\": \"$1\",
+    \"candidato\": ${2:False},
+    \"loss type\": \"$3\",
+    \"train loss\": $4, \"val loss\": $5,
+    \"train r2\": $6, \"val r2\" : $7,
+},

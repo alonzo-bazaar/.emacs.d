@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name:down
+# key:d
+# --
+_{$1} $0

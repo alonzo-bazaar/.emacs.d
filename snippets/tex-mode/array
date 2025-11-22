@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name:array
+# key:a
+# --
+\\{ $1 \\} $0

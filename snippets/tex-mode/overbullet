@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name:overbullet
+# key:ob
+# --
+\\overset{\\bullet}{$1} $0

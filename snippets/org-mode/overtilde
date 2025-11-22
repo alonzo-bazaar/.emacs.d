@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name:overtilde
+# key:ot
+# --
+\\tilde{$1} $0
