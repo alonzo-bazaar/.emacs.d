@@ -14,10 +14,13 @@
 (require 'comint)
 
 (defvar uiua-program "uiua"
-  "Path to the program used by `run-uiua'")
+  "Path to the program used by `run-uiua-repl' and `run-uiua-watch'")
 
-(defvar uiua-cli-arguments '("repl")
-  "Commandline arguments to pass to `uiua'.")
+(defvar uiua-repl-cli-arguments '("repl")
+  "Commandline arguments to pass to `uiua' when running a repl.")
+
+(defvar uiua-watch-cli-arguments '("watch")
+  "Commandline arguments to pass to `uiua' when running a watch.")
 
 (defvar uiua-interactive-mode-map
   (let ((map (append (make-sparse-keymap) uiua-mode-map comint-mode-map)))
@@ -27,30 +30,56 @@
   "Basic mode map for `run-uiua'.")
 
 (defvar uiua-prompt-regexp "^[[:space:]]+"
-  "Prompt for `run-uiua'.")
+  "Regexp to recognize prompt for `run-uiua'.")
 
-(defvar uiua-repl-buffer-name "*UIUA*"
-  "Name of the buffer to use for the `run-uiua' comint instance.")
+(defvar uiua-repl-buffer-name "*UIUA-REPL*"
+  "Name of the buffer to use for the `run-uiua-repl' comint instance.")
 
-;; TODO: add uiua-mode keywords andh highlighint to uiua-interactive-mode 
-(defun run-uiua ()
-  "Run an inferior instance of `uiua' inside Emacs."
-  (interactive)
+(defvar uiua-watch-buffer-name "*UIUA-WATCH*"
+  "Name of the buffer to use for the `run-uiua-watch' command.")
+
+;; TODO: add a run-uiua-watch
+(defun uiua-run-repl (&optional prefix)
+  "Run an inferior instance of `uiua' inside Emacs.
+when called with C-u `run-uiua-repl' it run a uiua repl after loading the current buffer's file"
+  (interactive "P")
+
   (let* ((uiua-program uiua-program)
          (buffer (get-buffer-create uiua-repl-buffer-name))
          (proc-alive (comint-check-proc buffer))
-         (process (get-buffer-process buffer)))
-    ;; if the process is dead then re-create the process and reset the
-    ;; mode.
+         (process (get-buffer-process buffer))
+
+         ;; filename obtained here (even if we may not use the filename)
+         ;; since the process creation happens within a `with-current-buffer'
+         ;; which would fuck with the output of `current-buffer'
+         (filename (buffer-file-name (current-buffer))))
+
+    ;; if the process is dead then re-create the process and reset the mode.
     ;; (or if it's your first time running it, I suppose)
     (unless proc-alive
       (with-current-buffer buffer
-        (apply 'make-comint-in-buffer "Uiua" buffer
-               uiua-program nil uiua-cli-arguments)
+        (apply 'make-comint-in-buffer
+               "Uiua" buffer uiua-program nil
+               (if prefix
+                   `(,@uiua-repl-cli-arguments ,filename)
+                 uiua-repl-cli-arguments))
         (uiua-interactive-mode)))
     ;; Regardless, provided we have a valid buffer, we pop to it.
     (when buffer
       (pop-to-buffer buffer))))
+
+;; TODO: add file to watch as optional argument
+;; prompt for filename when running with C-u
+(defun uiua-run-watch ()
+  "runs uiua watch on the current buffer's file
+and opens a buffer with the output of uiua watch"
+  (interactive)
+  (let* ((filename (buffer-file-name (current-buffer)))
+         (command
+          (cl-reduce (lambda (x y) (concat x " " y))
+                  `(,uiua-program ,@uiua-watch-cli-arguments ,filename))))
+    (async-shell-command command uiua-watch-buffer-name))
+  (pop-to-buffer uiua-watch-buffer-name))
 
 (defun uiua-interactive--initialize ()
   "Helper function to initialize uiua repl."
@@ -58,6 +87,7 @@
   (setq comint-use-prompt-regexp t))
 
 (defun nil/space-all-white (str)
+  "modifies string in place, ergo destructively"
   (cl-do ((i 0 (1+ i)))
 	  ((= i (length str)))
 	(when (or (= (aref str i) ?\n)
@@ -81,7 +111,9 @@ does regular uiua-interactive-mode hate multiline input
 
 this latter prefix behaviour might fuck with a couple things,
 such as multiline strings and some style warnings here and there for long lines
-which is, as of writing, not my problem"
+which is, as of writing, not my problem
+also the fact uiua uses newlines to separate statements in a function :|
+which is indeed my problem as of writing"
   (interactive "P")
   (if (use-region-p)
       (let* ((buffer (get-buffer-create uiua-repl-buffer-name))
@@ -90,17 +122,19 @@ which is, as of writing, not my problem"
         (if (and proc-alive buffer)
 			(let ((cmd (nil/region-as-string)))
 			  (when prefix
-				(setq cmd (nil/space-all-white cmd)))
+			  	(setq cmd (nil/space-all-white cmd)))
 			  (comint-send-string uiua-repl-buffer-name cmd)
-			  (comint-send-string uiua-repl-buffer-name "\n"))
+			  (comint-send-string uiua-repl-buffer-name "\n")
+			  )
           (message "No repl running")))
     (message "No region active")))
 
-;; stolen from github
-(defun casuiua-send-region-to-repl ()
+;; stolen from github in an attempt to fix my broken uiua-send-region
+;; it didn't work
+(defun casuiua-send-region-to-repl (region-start region-end)
   (interactive "r")
   (if (use-region-p)
-      (let* ((buffer (get-buffer-create uiua-repl-buffer-name))
+      (let* ((buffer (get-buffer-create "*uiua-repl*"))
              (proc-alive (comint-check-proc buffer))
              (process (get-buffer-process buffer)))
         (if (and proc-alive buffer)
@@ -127,7 +161,8 @@ which is, as of writing, not my problem"
 
 (add-hook 'uiua-interactive-mode-hook 'uiua-interactive--initialize)
 
-;; personal settings for uiua and uiua-interactive-mode
+;;; here be personal settings for uiua and uiua-interactive-mode
+
 ;; keybinds
 (add-hook 'uiua-mode-hook
           (lambda ()
@@ -136,6 +171,13 @@ which is, as of writing, not my problem"
             (local-set-key (kbd "C-c C-x C-r") 'uiua-format-region)
             (local-set-key (kbd "C-c C-x C-c") 'uiua-standalone-compile)
             ))
+
+;; executable name
+;; to avoid conflicts with the default uiua executable
+;; when installing uiua from the github releases
+;; I rename the executable to `lateuiua', so I can use them both if I so wish to
+;; and I usually use `lateuiua' instead of `uiua'
+(setq uiua-program "lateuiua")
 
 ;; wip
 ;; (define-key uiua-mode-map (kbd "<tab>")
@@ -155,8 +197,7 @@ which is, as of writing, not my problem"
 ;;                                  (uiua-format-region (region-beginning) (region-end)))))
 
 ;; lsp
-;; (add-hook 'uiua-mode-hook 'eglot-ensure)
-
+(add-hook 'uiua-mode-hook 'eglot-ensure)
 
 ;; TODO: see why RET turns to comint the moment I turn on this fucking uiua scheisse
 ;; I nconc'd the fucking mode maps together :|

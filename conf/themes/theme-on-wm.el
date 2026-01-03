@@ -1,6 +1,11 @@
 (defun pidof-p (program)
   (= 0 (call-process "pidof" nil nil nil "-q" program)))
 
+;; xmonad being a bitch
+;; fucking haskell source installs... man
+(defun xmonad-p ()
+  (= 0 (call-process-shell-command "ps -e | grep 'xmonad'")))
+
 (defvar muh-light-theme)
 (defvar muh-dark-theme)
 (defvar last-visited-wm "")
@@ -16,8 +21,8 @@
 
 (defun set-theme-based-on-wm-alist (alist)
   (cond ((null alist)
-         (setq muh-dark-theme muh-default-dark-theme)
-         (setq muh-light-theme muh-default-light-theme))
+	 (setq muh-dark-theme muh-default-dark-theme)
+	 (setq muh-light-theme muh-default-light-theme))
         ((pidof-p (caar alist))
          (setq last-visited-wm (caar alist))
          (setq muh-dark-theme (cadar alist))
@@ -26,4 +31,7 @@
 
 (defun set-theme-based-on-wm (&optional check-last-visited)
   (unless (and check-last-visited (pidof-p last-visited-wm))
-    (set-theme-based-on-wm-alist wm-themes-alist)))
+    (set-theme-based-on-wm-alist wm-themes-alist))
+  (when (xmonad-p) (setq muh-dark-theme 'doom-rose-pine)
+	(setq muh-light-theme 'doom-rose-pine-dawn)
+	(setq last-visited-wm "xmonad")))

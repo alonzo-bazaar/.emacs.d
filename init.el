@@ -67,12 +67,12 @@
 	   lsp-scheme lsp-ui lua-mode marginalia meow minizinc-mode
 	   multiple-cursors neotree nord-theme nordic-night-theme
 	   nordless-theme northcode-theme nyan-mode olivetti orderless
-	   org-bullets org-roam paredit pkg-info pyenv-mode pyvenv
-	   racket-mode rainbow-delimiters rainbow-mode ros rust-mode sly
-	   sly-overlay solaire-mode solarized-theme spacious-padding
-	   sxhkdrc-mode toml toml-mode tree-sitter-langs uiua-ts-mode
-	   undo-fu undo-tree vertico web-mode wgrep windresize yaml-mode
-	   yasnippet yuck-mode))
+	   org-bullets org-roam ox-gfm ox-jekyll-md ox-qmd paredit
+	   pkg-info pyenv-mode pyvenv racket-mode rainbow-delimiters
+	   rainbow-mode ros rust-mode scss-mode sly sly-overlay
+	   solaire-mode solarized-theme spacious-padding sxhkdrc-mode toml
+	   toml-mode tree-sitter-langs uiua-ts-mode undo-fu undo-tree
+	   vertico web-mode wgrep windresize yaml-mode yasnippet yuck-mode))
  '(tab-width 4))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.

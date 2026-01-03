@@ -8,6 +8,9 @@
               (eglot-ensure)
 			  (local-set-key (kbd "»") 'self-insert-command) ;; clashes with a global setting o' mine otherwise
               (local-set-key (kbd "C-c C-c") 'bqn-comint-send-region)))
+  (add-hook 'bqn-comint-mode-hook
+			(lambda ()
+			  (local-set-key (kbd "»") 'self-insert-command)))
 
   (with-eval-after-load 'align
 	(add-to-list 'align-rules-list
